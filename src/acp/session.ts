@@ -41,6 +41,11 @@ export class SessionManager {
   private sessions = new Map<string, PiAcpSession>()
   private readonly store = new SessionStore()
 
+  /** Dispose all sessions and their underlying pi subprocesses. */
+  disposeAll(): void {
+    for (const [id] of this.sessions) this.close(id)
+  }
+
   /** Get a registered session if it exists (no throw). */
   maybeGet(sessionId: string): PiAcpSession | undefined {
     return this.sessions.get(sessionId)
@@ -59,6 +64,14 @@ export class SessionManager {
       // ignore
     }
     this.sessions.delete(sessionId)
+  }
+
+  /** Close all sessions except the one with `keepSessionId`. */
+  closeAllExcept(keepSessionId: string): void {
+    for (const [id] of this.sessions) {
+      if (id === keepSessionId) continue
+      this.close(id)
+    }
   }
 
   async create(params: SessionCreateParams): Promise<PiAcpSession> {

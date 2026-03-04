@@ -39,7 +39,6 @@ import { hasAnyPiAuthConfigured } from '../pi-auth/status.js'
 
 type ThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
 
-
 function builtinAvailableCommands(): AvailableCommand[] {
   return [
     {
@@ -103,6 +102,10 @@ export class PiAcpAgent implements ACPAgent {
   private readonly conn: AgentSideConnection
   private readonly sessions = new SessionManager()
   private readonly store = new SessionStore()
+
+  dispose(): void {
+    this.sessions.disposeAll()
+  }
 
   // Remember recent session cwd and use it as the default filter.
   private lastSessionCwd: string | null = null
@@ -204,13 +207,25 @@ export class PiAcpAgent implements ACPAgent {
 
     // If quietStartup is enabled, suppress the full "startup info" prelude, but still surface
     // the "New version available" notice (if any) since it's high-signal and actionable.
-    const preludeText = quietStartup ? (updateNotice ? updateNotice + '\n' : '') : buildStartupInfo({
-      cwd: params.cwd,
-      fileCommands,
-      updateNotice
-    })
+    const preludeText = quietStartup
+      ? updateNotice
+        ? updateNotice + '\n'
+        : ''
+      : buildStartupInfo({
+          cwd: params.cwd,
+          fileCommands,
+          updateNotice
+        })
 
-    if (preludeText) session.setStartupInfo(preludeText)
+    if (preludeText)
+      session.setStartupInfo(preludeText)
+
+      // Policy: within a single ACP connection (one client window), keep only one live pi subprocess.
+      // This avoids leaking subprocesses when clients start new sessions but don't explicitly close old ones.
+      // It does NOT affect other client windows because they run in separate agent processes.
+      //
+      // (Tests sometimes stub out `this.sessions`, so guard the call.)
+    ;(this.sessions as any).closeAllExcept?.(session.sessionId)
 
     const response = {
       sessionId: session.sessionId,
@@ -807,6 +822,10 @@ export class PiAcpAgent implements ACPAgent {
       proc,
       fileCommands
     })
+
+    // Policy: within a single ACP connection (one Zed window), keep only one live pi subprocess.
+    // (Tests sometimes stub out `this.sessions`, so guard the call.)
+    ;(this.sessions as any).closeAllExcept?.(session.sessionId)
 
     // (Optional) ensure mapping stays fresh.
     this.store.upsert({
