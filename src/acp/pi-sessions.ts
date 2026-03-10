@@ -14,9 +14,9 @@ const DEFAULT_TAIL_BYTES = 256 * 1024
 const DEFAULT_HEAD_BYTES = 64 * 1024
 
 function getPiAgentDir(): string {
-  // pi supports overriding config dir via PI_CODING_AGENT_DIR.
-  // See pi README.
-  return process.env.PI_CODING_AGENT_DIR ?? join(homedir(), '.pi', 'agent')
+  // oh-my-pi supports overriding config dir via OMP_CODING_AGENT_DIR.
+  // Fall back to legacy PI_CODING_AGENT_DIR for compatibility.
+  return process.env.OMP_CODING_AGENT_DIR ?? process.env.PI_CODING_AGENT_DIR ?? join(homedir(), '.omp', 'agent')
 }
 
 export function getPiSessionsDir(): string {

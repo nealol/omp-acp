@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
@@ -14,23 +14,29 @@ function safeReadJson(path: string): any | null {
 }
 
 export function getPiAgentDir(): string {
-  // pi-mono uses ENV_AGENT_DIR = `${APP_NAME.toUpperCase()}_CODING_AGENT_DIR`.
-  // Default APP_NAME is "pi".
-  const envDir = process.env.PI_CODING_AGENT_DIR
+  // oh-my-pi uses OMP_CODING_AGENT_DIR; fall back to legacy PI_CODING_AGENT_DIR.
+  const envDir = process.env.OMP_CODING_AGENT_DIR ?? process.env.PI_CODING_AGENT_DIR
   if (envDir) {
     if (envDir === '~') return homedir()
     if (envDir.startsWith('~/')) return homedir() + envDir.slice(1)
     return envDir
   }
-  return join(homedir(), '.pi', 'agent')
+  return join(homedir(), '.omp', 'agent')
 }
 
 export function hasAnyPiAuthConfigured(): boolean {
-  // 1) auth.json present and non-empty (api keys or oauth creds)
   const agentDir = getPiAgentDir()
-  const authPath = join(agentDir, 'auth.json')
-  const auth = safeReadJson(authPath)
-  if (auth && typeof auth === 'object' && Object.keys(auth).length > 0) return true
+
+  // 1) agent.db present and non-zero size (oh-my-pi stores credentials in SQLite)
+  const dbPath = join(agentDir, 'agent.db')
+  try {
+    if (existsSync(dbPath)) {
+      const st = statSync(dbPath)
+      if (st.size > 0) return true
+    }
+  } catch {
+    // ignore
+  }
 
   // 2) models.json with custom provider apiKey configured
   const modelsPath = join(agentDir, 'models.json')
@@ -39,8 +45,6 @@ export function hasAnyPiAuthConfigured(): boolean {
   if (providers && typeof providers === 'object') {
     for (const p of Object.values(providers as Record<string, any>)) {
       if (p && typeof p === 'object' && typeof (p as any).apiKey === 'string' && (p as any).apiKey.trim()) {
-        // Note: pi treats a non-empty string as either env-var name OR literal secret.
-        // So presence of apiKey config is enough to be considered "auth configured".
         return true
       }
     }

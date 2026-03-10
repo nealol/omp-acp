@@ -3,12 +3,12 @@ import { PiAcpAgent } from './acp/agent.js'
 // Terminal Auth entrypoint. The ACP client launches the agent with `--terminal-login`.
 if (process.argv.includes('--terminal-login')) {
   const { spawnSync } = await import('node:child_process')
-  const cmd = process.env.PI_ACP_PI_COMMAND ?? 'pi'
+  const cmd = process.env.OMP_ACP_COMMAND ?? process.env.PI_ACP_PI_COMMAND ?? 'omp'
   const res = spawnSync(cmd, [], { stdio: 'inherit', env: process.env })
 
   if ((res as any).error && (res as any).error.code === 'ENOENT') {
     process.stderr.write(
-      `pi-acp: could not start pi (command not found: ${cmd}). Install it via \`npm install -g @mariozechner/pi-coding-agent\` or ensure \`pi\` is on your PATH.\n`
+      `omp-acp: could not start omp (command not found: ${cmd}). Install it via \`bun install -g @oh-my-pi/pi-coding-agent\` or ensure \`omp\` is on your PATH.\n`
     )
     process.exit(1)
   }

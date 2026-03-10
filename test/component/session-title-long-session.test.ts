@@ -9,7 +9,7 @@ import { listPiSessions } from '../../src/acp/pi-sessions.js'
 // Ensures we still pick up session_info.name even if it is older than the tail window.
 
 test('listPiSessions: finds session_info.name even when it is outside the tail window', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'pi-acp-test-'))
+  const root = mkdtempSync(join(tmpdir(), 'omp-acp-test-'))
   const sessionsDir = join(root, 'sessions', '--p--')
   mkdirSync(sessionsDir, { recursive: true })
 
@@ -24,15 +24,20 @@ test('listPiSessions: finds session_info.name even when it is outside the tail w
 
   writeFileSync(sessionFile, [header, info, filler].join('\n') + '\n', { encoding: 'utf8' })
 
-  const oldEnv = process.env.PI_CODING_AGENT_DIR
-  process.env.PI_CODING_AGENT_DIR = root
+  const oldEnv = process.env.OMP_CODING_AGENT_DIR
+  const oldLegacy = process.env.PI_CODING_AGENT_DIR
+  process.env.OMP_CODING_AGENT_DIR = root
+  delete process.env.PI_CODING_AGENT_DIR
 
   try {
     const s = listPiSessions().find(x => x.sessionId === 'sess-1')
     assert.ok(s)
     assert.equal(s?.title, 'Named Early')
   } finally {
-    if (oldEnv === undefined) delete process.env.PI_CODING_AGENT_DIR
-    else process.env.PI_CODING_AGENT_DIR = oldEnv
+    if (oldEnv === undefined) delete process.env.OMP_CODING_AGENT_DIR
+    else process.env.OMP_CODING_AGENT_DIR = oldEnv
+
+    if (oldLegacy === undefined) delete process.env.PI_CODING_AGENT_DIR
+    else process.env.PI_CODING_AGENT_DIR = oldLegacy
   }
 })

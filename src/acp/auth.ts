@@ -15,8 +15,8 @@ export function getAuthMethods(opts?: { supportsTerminalAuthMeta?: boolean }): A
 
   const method: any = {
     id: PI_SETUP_METHOD_ID,
-    name: 'Launch pi in the terminal',
-    description: 'Start pi in an interactive terminal to configure API keys or login',
+    name: 'Launch omp in the terminal',
+    description: 'Start omp in an interactive terminal to configure API keys or login',
 
     // Registry-required fields
     type: 'terminal',
@@ -33,7 +33,7 @@ export function getAuthMethods(opts?: { supportsTerminalAuthMeta?: boolean }): A
       ...(method._meta ?? {}),
       'terminal-auth': {
         ...launch,
-        label: 'Launch pi'
+        label: 'Launch omp'
       }
     }
   }
@@ -54,6 +54,6 @@ function terminalAuthLaunchSpec(): { command: string; args: string[] } {
     }
   }
 
-  // Fallback: assume `pi-acp` is on PATH.
-  return { command: 'pi-acp', args: ['--terminal-login'] }
+  // Fallback: assume `omp-acp` is on PATH.
+  return { command: 'omp-acp', args: ['--terminal-login'] }
 }

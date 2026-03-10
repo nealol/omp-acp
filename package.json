@@ -1,7 +1,7 @@
 {
-  "name": "pi-acp",
+  "name": "omp-acp",
   "version": "0.0.22",
-  "description": "ACP adapter for pi coding agent",
+  "description": "ACP adapter for oh-my-pi coding agent",
   "license": "MIT",
   "author": "Sergii Kozak <svkozak@gmail.com>",
   "repository": {
@@ -19,6 +19,7 @@
   "keywords": [
     "acp",
     "agent-client-protocol",
+    "oh-my-pi",
     "pi-coding-agent",
     "adapter"
   ],
@@ -28,7 +29,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "pi-acp": "dist/index.js"
+    "omp-acp": "dist/index.js"
   },
   "files": [
     "dist"

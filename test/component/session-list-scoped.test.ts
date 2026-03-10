@@ -8,7 +8,7 @@ import { PiAcpAgent } from '../../src/acp/agent.js'
 import { FakeAgentSideConnection, asAgentConn } from '../helpers/fakes.js'
 
 test('PiAcpAgent: unstable_listSessions defaults to lastSessionCwd when cwd param is omitted', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'pi-acp-test-'))
+  const root = mkdtempSync(join(tmpdir(), 'omp-acp-test-'))
 
   const dirA = join(root, 'sessions', '--a--')
   const dirB = join(root, 'sessions', '--b--')
@@ -33,8 +33,10 @@ test('PiAcpAgent: unstable_listSessions defaults to lastSessionCwd when cwd para
     { encoding: 'utf8' }
   )
 
-  const oldEnv = process.env.PI_CODING_AGENT_DIR
-  process.env.PI_CODING_AGENT_DIR = root
+  const oldEnv = process.env.OMP_CODING_AGENT_DIR
+  const oldLegacy = process.env.PI_CODING_AGENT_DIR
+  process.env.OMP_CODING_AGENT_DIR = root
+  delete process.env.PI_CODING_AGENT_DIR
 
   try {
     const conn = new FakeAgentSideConnection()
@@ -46,7 +48,10 @@ test('PiAcpAgent: unstable_listSessions defaults to lastSessionCwd when cwd para
     assert.equal(listed.sessions.length, 1)
     assert.equal(listed.sessions[0]?.sessionId, 'sess-a')
   } finally {
-    if (oldEnv === undefined) delete process.env.PI_CODING_AGENT_DIR
-    else process.env.PI_CODING_AGENT_DIR = oldEnv
+    if (oldEnv === undefined) delete process.env.OMP_CODING_AGENT_DIR
+    else process.env.OMP_CODING_AGENT_DIR = oldEnv
+
+    if (oldLegacy === undefined) delete process.env.PI_CODING_AGENT_DIR
+    else process.env.PI_CODING_AGENT_DIR = oldLegacy
   }
 })

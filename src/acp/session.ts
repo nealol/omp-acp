@@ -75,8 +75,8 @@ export class SessionManager {
   }
 
   async create(params: SessionCreateParams): Promise<PiAcpSession> {
-    // Let pi manage session persistence in its default location (~/.pi/agent/sessions/...)
-    // so sessions are visible to the regular `pi` CLI.
+    // Let omp manage session persistence in its default location (~/.omp/agent/sessions/...)
+    // so sessions are visible to the regular `omp` CLI.
     let proc: PiRpcProcess
     try {
       proc = await PiRpcProcess.spawn({
