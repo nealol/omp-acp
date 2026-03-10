@@ -50,6 +50,20 @@ type PiRpcCommand =
   | { type: 'get_messages'; id?: string }
   // Commands
   | { type: 'get_commands'; id?: string }
+  // oh-my-pi extended commands
+  | { type: 'new_session'; id?: string; parentSession?: string }
+  | { type: 'steer'; id?: string; message: string; images?: unknown[] }
+  | { type: 'follow_up'; id?: string; message: string; images?: unknown[] }
+  | { type: 'abort_and_prompt'; id?: string; message: string; images?: unknown[] }
+  | { type: 'cycle_model'; id?: string }
+  | { type: 'cycle_thinking_level'; id?: string }
+  | { type: 'set_interrupt_mode'; id?: string; mode: 'eager' | 'lazy' }
+  | { type: 'bash'; id?: string; command: string }
+  | { type: 'abort_bash'; id?: string }
+  | { type: 'branch'; id?: string; entryId: string }
+  | { type: 'get_branch_messages'; id?: string; entryId: string }
+  | { type: 'set_auto_retry'; id?: string; enabled: boolean }
+  | { type: 'abort_retry'; id?: string }
 
 type PiRpcResponse = {
   type: 'response'
@@ -309,6 +323,76 @@ export class PiRpcProcess {
     const res = await this.request({ type: 'get_commands' })
     if (!res.success) throw new Error(`pi get_commands failed: ${res.error ?? JSON.stringify(res.data)}`)
     return res.data
+  }
+
+  async newSession(parentSession?: string): Promise<unknown> {
+    const res = await this.request({ type: 'new_session', parentSession })
+    if (!res.success) throw new Error(`pi new_session failed: ${res.error ?? JSON.stringify(res.data)}`)
+    return res.data
+  }
+
+  async steer(message: string, images: unknown[] = []): Promise<void> {
+    const res = await this.request({ type: 'steer', message, images })
+    if (!res.success) throw new Error(`pi steer failed: ${res.error ?? JSON.stringify(res.data)}`)
+  }
+
+  async followUp(message: string, images: unknown[] = []): Promise<void> {
+    const res = await this.request({ type: 'follow_up', message, images })
+    if (!res.success) throw new Error(`pi follow_up failed: ${res.error ?? JSON.stringify(res.data)}`)
+  }
+
+  async abortAndPrompt(message: string, images: unknown[] = []): Promise<void> {
+    const res = await this.request({ type: 'abort_and_prompt', message, images })
+    if (!res.success) throw new Error(`pi abort_and_prompt failed: ${res.error ?? JSON.stringify(res.data)}`)
+  }
+
+  async cycleModel(): Promise<unknown> {
+    const res = await this.request({ type: 'cycle_model' })
+    if (!res.success) throw new Error(`pi cycle_model failed: ${res.error ?? JSON.stringify(res.data)}`)
+    return res.data
+  }
+
+  async cycleThinkingLevel(): Promise<unknown> {
+    const res = await this.request({ type: 'cycle_thinking_level' })
+    if (!res.success) throw new Error(`pi cycle_thinking_level failed: ${res.error ?? JSON.stringify(res.data)}`)
+    return res.data
+  }
+
+  async setInterruptMode(mode: 'eager' | 'lazy'): Promise<void> {
+    const res = await this.request({ type: 'set_interrupt_mode', mode })
+    if (!res.success) throw new Error(`pi set_interrupt_mode failed: ${res.error ?? JSON.stringify(res.data)}`)
+  }
+
+  async bash(command: string): Promise<void> {
+    const res = await this.request({ type: 'bash', command })
+    if (!res.success) throw new Error(`pi bash failed: ${res.error ?? JSON.stringify(res.data)}`)
+  }
+
+  async abortBash(): Promise<void> {
+    const res = await this.request({ type: 'abort_bash' })
+    if (!res.success) throw new Error(`pi abort_bash failed: ${res.error ?? JSON.stringify(res.data)}`)
+  }
+
+  async branch(entryId: string): Promise<unknown> {
+    const res = await this.request({ type: 'branch', entryId })
+    if (!res.success) throw new Error(`pi branch failed: ${res.error ?? JSON.stringify(res.data)}`)
+    return res.data
+  }
+
+  async getBranchMessages(entryId: string): Promise<unknown> {
+    const res = await this.request({ type: 'get_branch_messages', entryId })
+    if (!res.success) throw new Error(`pi get_branch_messages failed: ${res.error ?? JSON.stringify(res.data)}`)
+    return res.data
+  }
+
+  async setAutoRetry(enabled: boolean): Promise<void> {
+    const res = await this.request({ type: 'set_auto_retry', enabled })
+    if (!res.success) throw new Error(`pi set_auto_retry failed: ${res.error ?? JSON.stringify(res.data)}`)
+  }
+
+  async abortRetry(): Promise<void> {
+    const res = await this.request({ type: 'abort_retry' })
+    if (!res.success) throw new Error(`pi abort_retry failed: ${res.error ?? JSON.stringify(res.data)}`)
   }
 
   private request(cmd: PiRpcCommand): Promise<PiRpcResponse> {

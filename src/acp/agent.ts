@@ -244,15 +244,28 @@ export class PiAcpAgent implements ACPAgent {
       // (Tests sometimes stub out `this.sessions`, so guard the call.)
     ;(this.sessions as any).closeAllExcept?.(session.sessionId)
 
+    // Build _meta with oh-my-pi extended fields if present
+    const meta: any = {
+      piAcp: {
+        startupInfo: preludeText || null
+      }
+    }
+
+    // Expose oh-my-pi extended fields from get_state if available
+    if (state && typeof state === 'object') {
+      if (typeof state.interruptMode === 'string') {
+        meta.piAcp.interruptMode = state.interruptMode
+      }
+      if (typeof state.queuedMessageCount === 'number') {
+        meta.piAcp.queuedMessageCount = state.queuedMessageCount
+      }
+    }
+
     const response = {
       sessionId: session.sessionId,
       models,
       modes: thinking,
-      _meta: {
-        piAcp: {
-          startupInfo: preludeText || null
-        }
-      }
+      _meta: meta
     }
 
     // Try to send it immediately after session/new returns; if the client ignores it,
