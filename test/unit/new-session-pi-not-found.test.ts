@@ -6,17 +6,21 @@ import { join } from 'node:path'
 import { PiAcpAgent } from '../../src/acp/agent.js'
 import { FakeAgentSideConnection, asAgentConn } from '../helpers/fakes.js'
 
-test('PiAcpAgent: newSession returns a helpful Internal error when pi is not installed', async () => {
-  const prevAgentDir = process.env.PI_CODING_AGENT_DIR
-  const prevPiCmd = process.env.PI_ACP_PI_COMMAND
+test('PiAcpAgent: newSession returns a helpful Internal error when omp is not installed', async () => {
+  const prevAgentDir = process.env.OMP_CODING_AGENT_DIR
+  const prevLegacyDir = process.env.PI_CODING_AGENT_DIR
+  const prevPiCmd = process.env.OMP_ACP_COMMAND
+  const prevLegacyCmd = process.env.PI_ACP_PI_COMMAND
 
-  // Ensure we pass the auth gate so the agent actually tries to spawn pi.
-  const dir = mkdtempSync(join(tmpdir(), 'pi-acp-pi-not-found-'))
-  writeFileSync(join(dir, 'auth.json'), '{"dummy":"x"}', 'utf-8')
+  // Ensure we pass the auth gate so the agent actually tries to spawn omp.
+  const dir = mkdtempSync(join(tmpdir(), 'omp-acp-not-found-'))
+  writeFileSync(join(dir, 'agent.db'), 'notempty', 'utf-8')
   writeFileSync(join(dir, 'models.json'), '{}', 'utf-8')
 
-  process.env.PI_CODING_AGENT_DIR = dir
-  process.env.PI_ACP_PI_COMMAND = 'pi-does-not-exist-12345'
+  process.env.OMP_CODING_AGENT_DIR = dir
+  delete process.env.PI_CODING_AGENT_DIR
+  process.env.OMP_ACP_COMMAND = 'omp-does-not-exist-12345'
+  delete process.env.PI_ACP_PI_COMMAND
 
   try {
     const conn = new FakeAgentSideConnection()
@@ -27,10 +31,16 @@ test('PiAcpAgent: newSession returns a helpful Internal error when pi is not ins
       (e: any) => e?.code === -32603 && String(e?.message ?? '').toLowerCase().includes('executable not found')
     )
   } finally {
-    if (prevAgentDir == null) delete process.env.PI_CODING_AGENT_DIR
-    else process.env.PI_CODING_AGENT_DIR = prevAgentDir
+    if (prevAgentDir == null) delete process.env.OMP_CODING_AGENT_DIR
+    else process.env.OMP_CODING_AGENT_DIR = prevAgentDir
 
-    if (prevPiCmd == null) delete process.env.PI_ACP_PI_COMMAND
-    else process.env.PI_ACP_PI_COMMAND = prevPiCmd
+    if (prevLegacyDir == null) delete process.env.PI_CODING_AGENT_DIR
+    else process.env.PI_CODING_AGENT_DIR = prevLegacyDir
+
+    if (prevPiCmd == null) delete process.env.OMP_ACP_COMMAND
+    else process.env.OMP_ACP_COMMAND = prevPiCmd
+
+    if (prevLegacyCmd == null) delete process.env.PI_ACP_PI_COMMAND
+    else process.env.PI_ACP_PI_COMMAND = prevLegacyCmd
   }
 })

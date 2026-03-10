@@ -7,12 +7,12 @@ import { join } from 'node:path'
 import { PiAcpAgent } from '../../src/acp/agent.js'
 import { FakeAgentSideConnection, asAgentConn } from '../helpers/fakes.js'
 
-// We mock PiRpcProcess.spawn so loadSession doesn't actually spawn `pi`.
+// We mock PiRpcProcess.spawn so loadSession doesn't actually spawn `omp`.
 import { PiRpcProcess } from '../../src/pi-rpc/process.js'
 
 test('PiAcpAgent: unstable_listSessions lists pi sessions and loadSession replays history', async () => {
-  // Create a fake PI_CODING_AGENT_DIR with one session.
-  const root = mkdtempSync(join(tmpdir(), 'pi-acp-test-'))
+  // Create a fake OMP_CODING_AGENT_DIR with one session.
+  const root = mkdtempSync(join(tmpdir(), 'omp-acp-test-'))
   const sessionsDir = join(root, 'sessions', '--tmp--project--')
   const sessionFile = join(sessionsDir, '0000_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.jsonl')
 
@@ -54,8 +54,10 @@ test('PiAcpAgent: unstable_listSessions lists pi sessions and loadSession replay
     { encoding: 'utf8' }
   )
 
-  const oldEnv = process.env.PI_CODING_AGENT_DIR
-  process.env.PI_CODING_AGENT_DIR = root
+  const oldEnv = process.env.OMP_CODING_AGENT_DIR
+  const oldLegacy = process.env.PI_CODING_AGENT_DIR
+  process.env.OMP_CODING_AGENT_DIR = root
+  delete process.env.PI_CODING_AGENT_DIR
 
   try {
     const conn = new FakeAgentSideConnection()
@@ -108,7 +110,10 @@ test('PiAcpAgent: unstable_listSessions lists pi sessions and loadSession replay
       PiRpcProcess.spawn = originalSpawn
     }
   } finally {
-    if (oldEnv === undefined) delete process.env.PI_CODING_AGENT_DIR
-    else process.env.PI_CODING_AGENT_DIR = oldEnv
+    if (oldEnv === undefined) delete process.env.OMP_CODING_AGENT_DIR
+    else process.env.OMP_CODING_AGENT_DIR = oldEnv
+
+    if (oldLegacy === undefined) delete process.env.PI_CODING_AGENT_DIR
+    else process.env.PI_CODING_AGENT_DIR = oldLegacy
   }
 })

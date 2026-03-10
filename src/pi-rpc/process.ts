@@ -121,7 +121,7 @@ export class PiRpcProcess {
   }
 
   static async spawn(params: SpawnParams): Promise<PiRpcProcess> {
-    const cmd = params.piCommand ?? 'pi'
+    const cmd = params.piCommand ?? 'omp'
 
     // Speed/robustness for ACP:
     // - themes are irrelevant in rpc mode and can be noisy/slow to load.
@@ -160,16 +160,16 @@ export class PiRpcProcess {
       const code = typeof e?.code === 'string' ? e.code : undefined
       if (code === 'ENOENT') {
         throw new PiRpcSpawnError(
-          `Could not start pi: executable not found (command: ${cmd}). Pi needs to be installed before it can run in ACP clients. Install it via \`npm install -g @mariozechner/pi-coding-agent\` or ensure \`pi\` is on your PATH. Then try again.`,
+          `Could not start omp: executable not found (command: ${cmd}). oh-my-pi needs to be installed before it can run in ACP clients. Install it via \`bun install -g @oh-my-pi/pi-coding-agent\` or ensure \`omp\` is on your PATH. Then try again.`,
           { code, cause: e }
         )
       }
 
       if (code === 'EACCES') {
-        throw new PiRpcSpawnError(`Could not start pi: permission denied (command: ${cmd}).`, { code, cause: e })
+        throw new PiRpcSpawnError(`Could not start omp: permission denied (command: ${cmd}).`, { code, cause: e })
       }
 
-      throw new PiRpcSpawnError(`Could not start pi (command: ${cmd}).`, { code, cause: e })
+      throw new PiRpcSpawnError(`Could not start omp (command: ${cmd}).`, { code, cause: e })
     }
 
     child.stderr.on('data', () => {

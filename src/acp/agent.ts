@@ -66,17 +66,17 @@ function builtinAvailableCommands(): AvailableCommand[] {
     },
     {
       name: 'steering',
-      description: 'Get/set pi steering message delivery mode (how queued steering messages are delivered)',
+      description: 'Get/set omp steering message delivery mode (how queued steering messages are delivered)',
       input: { hint: '(no args to show) all | one-at-a-time' }
     },
     {
       name: 'follow-up',
-      description: 'Get/set pi follow-up message delivery mode (how queued follow-up messages are delivered)',
+      description: 'Get/set omp follow-up message delivery mode (how queued follow-up messages are delivered)',
       input: { hint: '(no args to show) all | one-at-a-time' }
     },
     {
       name: 'changelog',
-      description: 'Show pi changelog'
+      description: 'Show omp changelog'
     }
   ]
 }
@@ -123,8 +123,8 @@ export class PiAcpAgent implements ACPAgent {
     return {
       protocolVersion: requested === supportedVersion ? requested : supportedVersion,
       agentInfo: {
-        name: pkg.name ?? 'pi-acp',
-        title: 'pi ACP adapter',
+        name: pkg.name ?? 'omp-acp',
+        title: 'omp ACP adapter',
         version: pkg.version ?? '0.0.0'
       },
       // Zed currently uses ClientCapabilities._meta["terminal-auth"] to decide whether to show
@@ -175,7 +175,7 @@ export class PiAcpAgent implements ACPAgent {
       mcpServers: params.mcpServers,
       conn: this.conn,
       fileCommands,
-      piCommand: process.env.PI_ACP_PI_COMMAND
+      piCommand: process.env.OMP_ACP_COMMAND ?? process.env.PI_ACP_PI_COMMAND
     })
 
     // Fetch state + models once (parallel) to reduce startup latency.
@@ -395,7 +395,7 @@ export class PiAcpAgent implements ACPAgent {
         } catch (e: any) {
           const msg = String(e?.message ?? e)
           const hint = /set_session_name/i.test(msg)
-            ? ' This requires a newer pi version that supports `set_session_name` in RPC mode.'
+            ? ' This requires a newer omp version that supports `set_session_name` in RPC mode.'
             : ''
 
           await this.conn.sessionUpdate({
@@ -525,11 +525,11 @@ export class PiAcpAgent implements ACPAgent {
       if (cmd === 'changelog') {
         // Read pi's installed CHANGELOG.md. Adapter-side, no model call.
         const findChangelog = (): string | null => {
-          // 1) Locate the installed pi package by resolving the `pi` executable.
-          // On Node installs, `pi` typically resolves to .../@mariozechner/pi-coding-agent/dist/cli.js
+          // 1) Locate the installed omp package by resolving the `omp` executable.
+          // On Bun installs, `omp` typically resolves to .../@oh-my-pi/pi-coding-agent/dist/cli.js
           try {
             const whichCmd = process.platform === 'win32' ? 'where' : 'which'
-            const which = spawnSync(whichCmd, ['pi'], { encoding: 'utf-8' })
+            const which = spawnSync(whichCmd, ['omp'], { encoding: 'utf-8' })
             const piPath = String(which.stdout ?? '')
               .split(/\r?\n/)[0]
               ?.trim()
@@ -549,7 +549,7 @@ export class PiAcpAgent implements ACPAgent {
             const npmRoot = spawnSync('npm', ['root', '-g'], { encoding: 'utf-8' })
             const root = String(npmRoot.stdout ?? '').trim()
             if (root) {
-              const p = join(root, '@mariozechner', 'pi-coding-agent', 'CHANGELOG.md')
+              const p = join(root, '@oh-my-pi', 'pi-coding-agent', 'CHANGELOG.md')
               if (existsSync(p)) return p
             }
           } catch {
@@ -565,7 +565,7 @@ export class PiAcpAgent implements ACPAgent {
             sessionId: session.sessionId,
             update: {
               sessionUpdate: 'agent_message_chunk',
-              content: { type: 'text', text: "Changelog not found (couldn't locate pi installation)." }
+              content: { type: 'text', text: "Changelog not found (couldn't locate omp installation)." }
             }
           })
           return { stopReason: 'end_turn' }
@@ -653,7 +653,7 @@ export class PiAcpAgent implements ACPAgent {
         }
 
         const safeSessionId = session.sessionId.replace(/[^a-zA-Z0-9_-]/g, '_')
-        const outputPath = join(session.cwd, `pi-session-${safeSessionId}.html`)
+        const outputPath = join(session.cwd, `omp-session-${safeSessionId}.html`)
 
         let resultPath = ''
         try {
@@ -680,7 +680,7 @@ export class PiAcpAgent implements ACPAgent {
               sessionUpdate: 'agent_message_chunk',
               content: {
                 type: 'text',
-                text: 'Export failed: no output path returned by pi.'
+                text: 'Export failed: no output path returned by omp.'
               }
             }
           })
@@ -708,7 +708,7 @@ export class PiAcpAgent implements ACPAgent {
             sessionUpdate: 'agent_message_chunk',
             content: {
               type: 'resource_link',
-              name: `pi-session-${safeSessionId}.html`,
+              name: `omp-session-${safeSessionId}.html`,
               uri,
               mimeType: 'text/html',
               title: 'Session exported'
@@ -820,7 +820,7 @@ export class PiAcpAgent implements ACPAgent {
       proc = await PiRpcProcess.spawn({
         cwd: params.cwd,
         sessionPath: sessionFile,
-        piCommand: process.env.PI_ACP_PI_COMMAND
+        piCommand: process.env.OMP_ACP_COMMAND ?? process.env.PI_ACP_PI_COMMAND
       })
     } catch (e: any) {
       if (e?.name === 'PiRpcSpawnError') {
@@ -1153,14 +1153,14 @@ function buildUpdateNotice(): string | null {
   // Best-effort update check against npm registry.
   // Important: keep it fast to not slow down session/new.
   try {
-    const piVersion = spawnSync('pi', ['--version'], { encoding: 'utf-8' })
+    const piVersion = spawnSync('omp', ['--version'], { encoding: 'utf-8' })
     const installed = String(piVersion.stdout ?? '')
       .trim()
       .replace(/^v/i, '')
 
     if (!installed || !isSemver(installed)) return null
 
-    const latestRes = spawnSync('npm', ['view', '@mariozechner/pi-coding-agent', 'version'], {
+    const latestRes = spawnSync('npm', ['view', '@oh-my-pi/pi-coding-agent', 'version'], {
       encoding: 'utf-8',
       timeout: 800
     })
@@ -1171,7 +1171,7 @@ function buildUpdateNotice(): string | null {
     if (!latest || !isSemver(latest)) return null
     if (compareSemver(latest, installed) <= 0) return null
 
-    return `New version available: v${latest} (installed v${installed}). Run: \`npm i -g @mariozechner/pi-coding-agent\``
+    return `New version available: v${latest} (installed v${installed}). Run: \`bun install -g @oh-my-pi/pi-coding-agent\``
   } catch {
     return null
   }
@@ -1188,12 +1188,12 @@ function buildStartupInfo(opts: {
 
   // pi version header
   try {
-    const piVersion = spawnSync('pi', ['--version'], { encoding: 'utf-8' })
+    const piVersion = spawnSync('omp', ['--version'], { encoding: 'utf-8' })
     const installed = String(piVersion.stdout ?? '')
       .trim()
       .replace(/^v/i, '')
     if (installed) {
-      md.push(`pi v${installed}`)
+      md.push(`omp v${installed}`)
       md.push('---')
       md.push('')
     }
@@ -1276,15 +1276,15 @@ function buildStartupInfo(opts: {
   const legacyAgentsSkillsDir = join(process.env.HOME ?? '', '.agents', 'skills')
   pushSkillFromRoot(legacyAgentsSkillsDir)
 
-  // Project skills (.pi/skills)
-  const projectSkillsDir = join(opts.cwd, '.pi', 'skills')
+  // Project skills (.omp/skills)
+  const projectSkillsDir = join(opts.cwd, '.omp', 'skills')
   pushSkillFromRoot(projectSkillsDir)
 
   addSection('Skills', skillsItems)
 
   // Prompts
   const promptsItems: string[] = []
-  const promptsDir = join(process.env.HOME ?? '', '.pi', 'agent', 'prompts')
+  const promptsDir = join(process.env.HOME ?? '', '.omp', 'agent', 'prompts')
   try {
     const prompts = readdirSync(promptsDir).filter(f => f.endsWith('.md'))
     for (const f of prompts) promptsItems.push(`/${basename(f, '.md')}`)
@@ -1295,7 +1295,7 @@ function buildStartupInfo(opts: {
 
   // Extensions
   const extItems: string[] = []
-  const extDir = join(process.env.HOME ?? '', '.pi', 'agent', 'extensions')
+  const extDir = join(process.env.HOME ?? '', '.omp', 'agent', 'extensions')
   try {
     const exts = readdirSync(extDir).filter(f => f.endsWith('.ts') || f.endsWith('.js'))
     for (const f of exts) extItems.push(join(extDir, f))
@@ -1305,7 +1305,7 @@ function buildStartupInfo(opts: {
 
   // Also show npm packages from pi settings (best-effort)
   try {
-    const settingsPath = join(process.env.HOME ?? '', '.pi', 'agent', 'settings.json')
+    const settingsPath = join(process.env.HOME ?? '', '.omp', 'agent', 'settings.json')
     const settings = JSON.parse(readFileSync(settingsPath, 'utf-8')) as any
     const pkgs: string[] = Array.isArray(settings?.packages) ? settings.packages : []
     for (const pkg of pkgs) {
@@ -1352,5 +1352,5 @@ function readNearestPackageJson(metaUrl: string): {
   } catch {
     // ignore
   }
-  return { name: 'pi-acp', version: '0.0.0' }
+  return { name: 'omp-acp', version: '0.0.0' }
 }

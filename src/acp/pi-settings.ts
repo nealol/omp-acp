@@ -29,7 +29,7 @@ function readJsonFile(path: string): Record<string, unknown> {
 
 function getMergedSettings(cwd: string): Record<string, unknown> {
   const globalSettingsPath = join(getAgentDir(), 'settings.json')
-  const projectSettingsPath = resolve(cwd, '.pi', 'settings.json')
+  const projectSettingsPath = resolve(cwd, '.omp', 'settings.json')
 
   const global = readJsonFile(globalSettingsPath)
   const project = readJsonFile(projectSettingsPath)
@@ -37,7 +37,8 @@ function getMergedSettings(cwd: string): Record<string, unknown> {
 }
 
 export function getAgentDir(): string {
-  return process.env.PI_CODING_AGENT_DIR ? resolve(process.env.PI_CODING_AGENT_DIR) : join(homedir(), '.pi', 'agent')
+  const envDir = process.env.OMP_CODING_AGENT_DIR ?? process.env.PI_CODING_AGENT_DIR
+  return envDir ? resolve(envDir) : join(homedir(), '.omp', 'agent')
 }
 
 /**

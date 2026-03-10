@@ -11,7 +11,7 @@ test('PiAcpSession: emits ACP diff content for edit tool when file changes', asy
   const conn = new FakeAgentSideConnection()
   const proc = new FakePiRpcProcess()
 
-  const dir = mkdtempSync(join(tmpdir(), 'pi-acp-diff-'))
+  const dir = mkdtempSync(join(tmpdir(), 'omp-acp-diff-'))
   mkdirSync(dir, { recursive: true })
   const filePath = join(dir, 'a.txt')
   writeFileSync(filePath, 'before\n', 'utf8')

@@ -1,17 +1,17 @@
-# pi-acp (ACP adapter for pi-coding-agent)
+# omp-acp (ACP adapter for oh-my-pi)
 
-This repository implements an **Agent Client Protocol (ACP)** adapter for **pi** (`@mariozechner/pi-coding-agent`) without modifying pi.
+This repository implements an **Agent Client Protocol (ACP)** adapter for **oh-my-pi** (`@oh-my-pi/pi-coding-agent`) without modifying oh-my-pi.
 
 - ACP side: **JSON-RPC 2.0 over stdio** using `@agentclientprotocol/sdk` (TypeScript)
-- Pi side: spawn `pi --mode rpc` and communicate via **newline-delimited JSON** over stdio
+- omp side: spawn `omp --mode rpc` and communicate via **newline-delimited JSON** over stdio
 
 ## Architecture (MVP)
 
-### 1 ACP session ↔ 1 pi subprocess
+### 1 ACP session ↔ 1 omp subprocess
 
-Pi RPC mode is effectively single-session, so the adapter maps:
+omp RPC mode is effectively single-session, so the adapter maps:
 
-- `session/new` → spawn a dedicated `pi --mode rpc` process
+- `session/new` → spawn a dedicated `omp --mode rpc` process
 - `session/prompt` → send `{type:"prompt"}` to that process and stream events back as `session/update`
 - `session/cancel` → send `{type:"abort"}`
 
@@ -24,10 +24,10 @@ Use `@agentclientprotocol/sdk`:
 
 ## Implementation constraints / decisions
 
-- Do **not** implement ACP client-side FS/terminal delegation in MVP. Pi already reads/writes and executes locally.
+- Do **not** implement ACP client-side FS/terminal delegation in MVP. omp already reads/writes and executes locally.
 - Ignore `mcpServers` for MVP (accept in params, store in session state).
-- Stream all pi assistant output as ACP `agent_message_chunk` initially.
-- Tool events: map pi tool execution events to ACP `tool_call` / `tool_call_update` (as text content).
+- Stream all omp assistant output as ACP `agent_message_chunk` initially.
+- Tool events: map omp tool execution events to ACP `tool_call` / `tool_call_update` (as text content).
 
 ## Dev workflow (to be filled once scaffold exists)
 
@@ -54,8 +54,8 @@ For real validation, test with an ACP client (e.g. Zed external agent).
 ## Coding guidelines
 
 - Keep ACP protocol handling in `src/acp/*`.
-- Keep pi RPC subprocess logic in `src/pi-rpc/*`.
-- Prefer small translation functions (pi event → ACP session/update) with unit tests.
+- Keep omp RPC subprocess logic in `src/pi-rpc/*`.
+- Prefer small translation functions (omp event → ACP session/update) with unit tests.
 - Be strict about streaming and process cleanup (handle exit, drain stdout/stderr, timeouts).
 - Avoid producing unnecessary comments! Use comments sparingly to explain non-obvious decisions, not to narrate code.
 - Avoid using `any` in TypeScript; prefer explicit types and interfaces. Only use `any` when absolutely necessary (e.g. for untyped external data).
