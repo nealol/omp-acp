@@ -309,10 +309,33 @@ export class PiAcpSession {
 
     this.pendingTurn = { resolve: t.resolve, reject: t.reject }
 
-    // Publish queue depth (0 because we're starting the turn now).
-    this.emit({
-      sessionUpdate: 'session_info_update',
-      _meta: { piAcp: { queueDepth: this.turnQueue.length, running: true } }
+    // Fetch state to include interruptMode and queuedMessageCount if available.
+    void this.proc.getState().then((state: any) => {
+      const meta: any = {
+        piAcp: {
+          queueDepth: this.turnQueue.length,
+          running: true
+        }
+      }
+
+      // Expose oh-my-pi extended fields if present
+      if (typeof state?.interruptMode === 'string') {
+        meta.piAcp.interruptMode = state.interruptMode
+      }
+      if (typeof state?.queuedMessageCount === 'number') {
+        meta.piAcp.queuedMessageCount = state.queuedMessageCount
+      }
+
+      this.emit({
+        sessionUpdate: 'session_info_update',
+        _meta: meta
+      })
+    }).catch(() => {
+      // Fallback if state fetch fails
+      this.emit({
+        sessionUpdate: 'session_info_update',
+        _meta: { piAcp: { queueDepth: this.turnQueue.length, running: true } }
+      })
     })
 
     // Kick off pi, but completion is determined by pi events, not the RPC response.
@@ -567,6 +590,33 @@ export class PiAcpSession {
               _meta: { piAcp: { queueDepth: 0, running: false } }
             })
           }
+        })
+        break
+      }
+
+      case 'extension_ui_request': {
+        // oh-my-pi extensions can emit UI request frames (e.g., for slash commands, hooks).
+        // For now, we auto-confirm them by sending a simple text message to the ACP client.
+        // This prevents extensions from hanging while waiting for user input.
+        const message = String((ev as any).message ?? 'Extension UI request')
+        const details = (ev as any).details
+
+        // Build a user-friendly message
+        let text = `Extension request: ${message}`
+        if (details && typeof details === 'object') {
+          try {
+            const detailsStr = JSON.stringify(details, null, 2)
+            if (detailsStr !== '{}') {
+              text += `\n${detailsStr}`
+            }
+          } catch {
+            // Ignore JSON stringify errors
+          }
+        }
+
+        this.emit({
+          sessionUpdate: 'agent_message_chunk',
+          content: { type: 'text', text }
         })
         break
       }
